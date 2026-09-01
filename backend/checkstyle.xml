@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Rules, not formatting. Java formatting is left to the IDE by deliberate
+  workspace policy, so nothing here enforces indentation, wrapping or
+  whitespace. What is enforced is what a reviewer would otherwise have to
+  catch by eye, including two of the project's non-negotiables: no Lombok
+  and no field injection.
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="charset" value="UTF-8"/>
+  <property name="fileExtensions" value="java"/>
+
+  <module name="LineLength">
+    <property name="max" value="120"/>
+    <property name="ignorePattern" value="^package .*|^import .*|https?://"/>
+  </module>
+
+  <module name="FileTabCharacter"/>
+  <module name="NewlineAtEndOfFile"/>
+
+  <module name="TreeWalker">
+    <module name="SuppressWarningsHolder"/>
+
+    <!-- Imports -->
+    <module name="AvoidStarImport"/>
+    <module name="RedundantImport"/>
+    <module name="UnusedImports"/>
+    <module name="IllegalImport">
+      <property name="illegalPkgs" value="sun, lombok"/>
+      <property name="illegalClasses"
+                value="org.springframework.beans.factory.annotation.Autowired"/>
+      <message key="import.illegal"
+               value="Illegal import - {0}. Lombok is not used in this project (Java records cover the need), and @Autowired is unnecessary because dependencies are injected through a single constructor."/>
+    </module>
+
+    <!-- File and type layout -->
+    <module name="OuterTypeFilename"/>
+    <module name="OneTopLevelClass"/>
+    <module name="PackageDeclaration"/>
+
+    <!-- Naming -->
+    <module name="ConstantName"/>
+    <module name="LocalFinalVariableName"/>
+    <module name="LocalVariableName"/>
+    <module name="MemberName"/>
+    <module name="MethodName"/>
+    <module name="PackageName"/>
+    <module name="ParameterName"/>
+    <module name="StaticVariableName"/>
+    <module name="TypeName"/>
+
+    <!-- Modifiers -->
+    <module name="ModifierOrder"/>
+    <module name="RedundantModifier"/>
+
+    <!-- Blocks and control flow -->
+    <module name="NeedBraces"/>
+    <module name="EmptyBlock">
+      <property name="option" value="text"/>
+    </module>
+    <module name="EmptyCatchBlock"/>
+    <module name="FallThrough"/>
+    <module name="DefaultComesLast"/>
+    <module name="OneStatementPerLine"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="UnnecessaryParentheses"/>
+    <module name="UnusedLocalVariable"/>
+
+    <!-- Correctness -->
+    <module name="CovariantEquals"/>
+    <module name="EqualsHashCode"/>
+    <module name="EqualsAvoidNull"/>
+    <module name="StringLiteralEquality"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <module name="NoFinalizer"/>
+    <module name="UpperEll"/>
+    <module name="ArrayTypeStyle"/>
+    <module name="IllegalCatch"/>
+    <module name="IllegalThrows"/>
+
+    <!-- Design -->
+    <module name="FinalClass"/>
+    <module name="InterfaceIsType"/>
+    <module name="VisibilityModifier">
+      <property name="protectedAllowed" value="true"/>
+    </module>
+    <module name="HiddenField">
+      <property name="ignoreConstructorParameter" value="true"/>
+      <property name="ignoreSetter" value="true"/>
+      <property name="ignoreAbstractMethods" value="true"/>
+    </module>
+
+    <!-- Size -->
+    <module name="MethodLength">
+      <property name="max" value="80"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="8"/>
+      <property name="tokens" value="METHOD_DEF"/>
+    </module>
+  </module>
+
+  <module name="SuppressWarningsFilter"/>
+</module>

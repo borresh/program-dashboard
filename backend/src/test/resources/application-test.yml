@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    # H2 in PostgreSQL mode. The single Flyway migration set runs here unchanged;
+    # there is no second, H2-specific schema. See V1__init.sql for the constraints
+    # that keeps on the SQL.
+    url: jdbc:h2:mem:program-dashboard;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  address: 127.0.0.1
+
+program-dashboard:
+  cors:
+    allowed-origins: http://localhost:4200

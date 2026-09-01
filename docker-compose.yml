@@ -1,0 +1,72 @@
+name: program-dashboard
+
+# Every port is published to 127.0.0.1 only. That, not the application's own bind
+# address, is what keeps the stack off the LAN: inside a container the process has
+# to listen on 0.0.0.0 for a published port to reach it at all.
+#
+# Container-to-container traffic uses compose service names on this project's
+# default network. There is no external network and no devbox.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      TZ: UTC
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # 0.0.0.0 inside the container; the localhost guarantee comes from the
+      # published port above. Running the backend on the host instead uses the
+      # application default of 127.0.0.1.
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      PROGRAM_DASHBOARD_CORS_ALLOWED_ORIGINS: ${PROGRAM_DASHBOARD_CORS_ALLOWED_ORIGINS:?set PROGRAM_DASHBOARD_CORS_ALLOWED_ORIGINS in .env}
+      TZ: UTC
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # The browser, not the container, calls the API, so this is a host URL.
+      PROGRAM_DASHBOARD_API_BASE_URL: http://localhost:${SERVER_PORT:-8080}
+      PROGRAM_DASHBOARD_HUMAN_AGENT_ID: ${PROGRAM_DASHBOARD_HUMAN_AGENT_ID:?set PROGRAM_DASHBOARD_HUMAN_AGENT_ID in .env}
+      TZ: UTC
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-4200}:4200"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,20 @@
+/*
+ * Tailwind, deliberately without preflight.
+ *
+ * Importing "tailwindcss" would pull in theme, preflight and utilities together.
+ * Preflight resets the elements Angular Material styles, so Material would lose
+ * its baseline. Importing theme and utilities only leaves Material owning the
+ * baseline, which is what this project wants: Material for anything with
+ * behaviour, Tailwind for layout and spacing.
+ *
+ * Kept as plain CSS rather than folded into styles.scss, because Sass would
+ * mangle the layer() syntax below before PostCSS ever sees it.
+ */
+
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@source './index.html';
+@source './app/**/*.{html,ts}';

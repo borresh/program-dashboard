@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Project-local Maven settings.
+
+  Why this file exists: the machine-wide ~/.m2/settings.xml mirrors Maven Central
+  to a corporate Artifactory that requires a work account. That is the right setup
+  for work projects and the wrong one for this project, which has no corporate
+  dependencies and should keep building when a work token expires or the VPN is
+  down.
+
+  This file declares no mirrors, so Maven resolves straight from Maven Central.
+  It replaces the user settings rather than merging with them, which is exactly
+  what is wanted here. The machine-wide file is not modified.
+
+  It is wired in through .mvn/maven.config, so `mvn -f backend/pom.xml verify`
+  run from the project root picks it up with no extra flags.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <!-- Shared with every other project on this machine; only resolution changes. -->
+  <localRepository>${user.home}/.m2/repository</localRepository>
+
+  <mirrors/>
+  <servers/>
+  <proxies/>
+  <profiles/>
+</settings>

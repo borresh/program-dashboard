@@ -1,0 +1,29 @@
+# --- Environment ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Java / Maven -----------------------------------------------------------
+target/
+*.class
+*.jar
+*.war
+
+# --- Node / Angular ---------------------------------------------------------
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+*.tsbuildinfo
+
+# Generated from the backend's OpenAPI spec at build time, never hand-written
+# and never committed.
+frontend/src/app/api/
+frontend/openapi.json
+
+# --- IDE / editor -----------------------------------------------------------
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
