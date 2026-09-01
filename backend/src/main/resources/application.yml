@@ -15,6 +15,12 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  jackson:
+    # One rule for the whole API: an optional value is absent, never null. springdoc
+    # cannot express a nullable object reference correctly in OpenAPI 3.1, so a response
+    # carrying nulls would produce a generated client that claims fields are `undefined`
+    # while the wire sends `null`. Omitting them keeps the contract and the payload honest.
+    default-property-inclusion: non_null
 
 server:
   # Bind to loopback by default so a backend started outside Docker is not exposed

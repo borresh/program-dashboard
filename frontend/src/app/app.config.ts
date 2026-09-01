@@ -6,6 +6,7 @@ import {
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
+import { provideApi } from './api';
 import { routes } from './app.routes';
 import { RUNTIME_CONFIG, RuntimeConfig } from './core/runtime-config';
 
@@ -16,6 +17,8 @@ export function appConfig(runtimeConfig: RuntimeConfig): ApplicationConfig {
       provideZonelessChangeDetection(),
       provideRouter(routes),
       provideHttpClient(withFetch()),
+      // Generated from the backend's OpenAPI specification; never hand-written.
+      provideApi(runtimeConfig.apiBaseUrl),
       { provide: RUNTIME_CONFIG, useValue: runtimeConfig },
     ],
   };

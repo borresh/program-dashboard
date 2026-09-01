@@ -6,6 +6,11 @@ const angular = require('angular-eslint');
 
 module.exports = defineConfig([
   {
+    // Generated from the backend's OpenAPI specification on every build. Linting it
+    // would report findings nobody can fix.
+    ignores: ['dist/**', '.angular/**', 'src/app/api/**'],
+  },
+  {
     files: ['**/*.ts'],
     extends: [
       eslint.configs.recommended,

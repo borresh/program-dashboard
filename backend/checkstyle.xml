@@ -90,10 +90,13 @@
     <module name="VisibilityModifier">
       <property name="protectedAllowed" value="true"/>
     </module>
+    <!--
+      Local variables only. A local that shadows a field is nearly always a bug; a
+      constructor or mutator parameter that shares its field's name is idiomatic
+      Java, and renaming those to satisfy the check makes the code worse.
+    -->
     <module name="HiddenField">
-      <property name="ignoreConstructorParameter" value="true"/>
-      <property name="ignoreSetter" value="true"/>
-      <property name="ignoreAbstractMethods" value="true"/>
+      <property name="tokens" value="VARIABLE_DEF, PATTERN_VARIABLE_DEF"/>
     </module>
 
     <!-- Size -->
@@ -104,6 +107,12 @@
       <property name="max" value="8"/>
       <property name="tokens" value="METHOD_DEF"/>
     </module>
+  </module>
+
+  <!-- Path supplied by maven-checkstyle-plugin's suppressionsLocation. -->
+  <module name="SuppressionFilter">
+    <property name="file" value="${checkstyle.suppressions.file}" default=""/>
+    <property name="optional" value="true"/>
   </module>
 
   <module name="SuppressWarningsFilter"/>

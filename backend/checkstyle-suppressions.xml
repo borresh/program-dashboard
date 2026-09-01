@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+  <!--
+    MockMvc's perform() declares `throws Exception`, so every test method that uses it
+    has to as well. Banning that in test code would mean wrapping every call in a
+    try/catch that adds nothing. The rule still applies to main sources.
+  -->
+  <suppress checks="IllegalThrows" files="[\\/]src[\\/]test[\\/]"/>
+</suppressions>

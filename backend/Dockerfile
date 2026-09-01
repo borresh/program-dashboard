@@ -1,17 +1,18 @@
 # syntax=docker/dockerfile:1
 
-# Build stage. Tests are not run here; `./up.sh` runs `mvn verify` on the host,
-# which is also what produces the OpenAPI spec the frontend build consumes.
+# Build stage. Tests are skipped here and the client generator is off: `./up.sh` runs
+# `mvn verify` on the host, which is what produces the OpenAPI spec and generates the
+# Angular client into frontend/src/app/api. This image only needs the jar.
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /build
 
-COPY pom.xml checkstyle.xml ./
+COPY pom.xml checkstyle.xml checkstyle-suppressions.xml ./
 COPY src ./src
 
 # No ~/.m2/settings.xml inside the image, so Maven resolves straight from Central
 # and the project-local .mvn/settings.xml is not needed here.
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -ntp -DskipTests package
+    mvn -B -ntp -DskipTests -Dopenapi.generate.skip=true package
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app

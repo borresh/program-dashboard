@@ -1,0 +1,5 @@
+// Generated from the backend's OpenAPI specification. Not linted and not formatted:
+// it is regenerated on every build and any finding here would be unfixable.
+dist
+.angular
+src/app/api

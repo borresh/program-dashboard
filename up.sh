@@ -56,10 +56,26 @@ the default JVM:
 export JAVA_HOME
 log "Using JDK at $JAVA_HOME"
 
+# --- Testcontainers ---------------------------------------------------------
+# The *IT tests run against a real PostgreSQL. Inside a dev container the Docker
+# socket is the host's, so those containers publish their ports on the host rather
+# than on this container's loopback; Testcontainers has to be told where to reach
+# them. Outside a container the default of localhost is already correct.
+if [ -f /.dockerenv ] && [ -z "${TESTCONTAINERS_HOST_OVERRIDE:-}" ]; then
+    TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal
+    export TESTCONTAINERS_HOST_OVERRIDE
+    log "Running inside a container; Testcontainers will use $TESTCONTAINERS_HOST_OVERRIDE"
+fi
+
 # --- Backend ----------------------------------------------------------------
+# `verify` does three things in order that later steps depend on: it runs the tests,
+# it exports the OpenAPI specification the backend owns, and it generates the Angular
+# API client into frontend/src/app/api from that specification. Neither the spec nor
+# the client is committed, so this cannot be skipped on a fresh checkout.
+#
 # Resolution goes straight to Maven Central through .mvn/settings.xml; see the
 # comment in that file for why the machine-wide settings are bypassed.
-log "Building backend (mvn verify)"
+log "Building backend, exporting the API contract and generating the client"
 mvn -f backend/pom.xml verify
 
 # --- Stack ------------------------------------------------------------------
