@@ -1,9 +1,11 @@
 package no.borresh.programdashboard.agent;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Tag(name = "agents", description = "Registration and lookup of the agents that use this API.")
-@RequestMapping("/api/agents")
+@RequestMapping(path = "/api/agents", produces = MediaType.APPLICATION_JSON_VALUE)
 class AgentController {
 
     private final AgentService agentService;
@@ -23,6 +25,7 @@ class AgentController {
     }
 
     @PostMapping
+    @Operation(operationId = "registerAgent")
     ResponseEntity<AgentResponse> register(@Valid @RequestBody RegisterAgentRequest request) {
         AgentService.Registration registration = agentService.register(request);
         AgentResponse body = AgentResponse.from(registration.agent());
@@ -33,6 +36,7 @@ class AgentController {
     }
 
     @GetMapping
+    @Operation(operationId = "listAgents")
     List<AgentResponse> list() {
         return agentService.findAll();
     }

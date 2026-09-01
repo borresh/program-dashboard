@@ -1,0 +1,41 @@
+.pd-status {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.pd-status[data-status='ACTIVE'] {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.pd-status[data-status='DONE'] {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.pd-status[data-status='ABANDONED'] {
+  opacity: 0.55;
+}
+
+// R21: a blocking question means an agent has stopped and is waiting on me, so it is
+// the one thing on this page that has to be impossible to miss.
+.pd-blocking {
+  align-items: center;
+  color: var(--mat-sys-error);
+  display: inline-flex;
+  font-weight: 500;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.pd-row-blocked {
+  background: color-mix(in srgb, var(--mat-sys-error-container) 45%, transparent);
+}
+
+.pd-error {
+  border-color: var(--mat-sys-error);
+}

@@ -1,0 +1,21 @@
+.pd-entry {
+  align-items: start;
+  border-left: 2px solid var(--mat-sys-outline-variant);
+  display: flex;
+  gap: 0.6rem;
+  margin-left: 0.5rem;
+  padding: 0.4rem 0 0.4rem 0.9rem;
+}
+
+.pd-entry:first-child {
+  padding-top: 0;
+}
+
+.pd-entry:last-child {
+  padding-bottom: 0;
+}
+
+.pd-entry-icon {
+  color: var(--mat-sys-on-surface-variant);
+  margin-top: 0.15rem;
+}

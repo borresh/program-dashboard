@@ -6,10 +6,9 @@ the AI agents working on them to report progress and ask me questions.
 The browser and the agents use the same REST API. There is no separate
 backend-for-frontend.
 
-> **Status: phase 2 of 4.** Agents, programs and milestones are complete behind the
-> REST API, and the Angular client is generated from the backend's OpenAPI
-> specification. Clarifications and the browser screens land in phase 3. See
-> *Build order* below.
+**Status: v1 complete.** An agent posts a clarification question through the API, I
+answer it in the browser, and the agent reads the answer back on its next poll. No
+copy-paste, nothing lost.
 
 ## Requirements
 
@@ -45,11 +44,14 @@ docker compose down -v            # stop and discard the database
 
 ```sh
 export JAVA_HOME=/path/to/jdk-25
-mvn -f backend/pom.xml verify                  # tests + Checkstyle
+mvn -f backend/pom.xml verify     # tests, Checkstyle, OpenAPI export, client generation
 npm --prefix frontend ci
 npm --prefix frontend run lint
 npm --prefix frontend run build
+./e2e.sh                          # browser checks against the running containers
 ```
+
+`mvn verify` needs Docker for the Testcontainers `*IT` tests; `mvn test` does not.
 
 ## The API contract
 
@@ -74,6 +76,12 @@ POST   /api/programs/{idOrSlug}/milestones
 PATCH  /api/milestones/{id}
 DELETE /api/milestones/{id}?actorAgentId=...
 
+POST   /api/programs/{idOrSlug}/clarifications
+GET    /api/clarifications?status=&program=
+GET    /api/clarifications/{id}                       the endpoint an agent polls
+POST   /api/clarifications/{id}/answer
+
+GET    /api/programs/{idOrSlug}/activity?page=&size=
 GET    /actuator/health
 ```
 
@@ -88,7 +96,9 @@ of a registered agent, which is what fills the append-only activity log and keep
 backend/     Spring Boot 4.1, Java 25, PostgreSQL via Spring Data JPA and Flyway
 frontend/    Angular 22, Angular Material for behaviour, Tailwind for layout
 .mvn/        project-local Maven settings; see the comment in settings.xml
+e2e/         Playwright browser checks, run in a container
 up.sh        build the backend, then bring the stack up
+e2e.sh       run the browser checks
 ```
 
 Everything the application knows, it was told through the API. It reads nothing
@@ -126,11 +136,24 @@ which relies on the containers' own healthchecks, rather than curling
 
 ## Build order
 
-1. **Skeleton** — compose, schema, health, quality gates, Angular shell. *Done.*
+1. **Skeleton** — compose, schema, health, quality gates, Angular shell.
 2. **Agents, programs and milestones** — entities, services, controllers, OpenAPI
-   spec, generated client. *Done.*
-3. Clarifications end to end — asking, answering from the browser, polling.
-4. Activity log endpoint, overview badges, `AGENTS.md`, `AGENT-API.md`.
+   spec, generated client.
+3. **Clarifications end to end** — asking, answering from the browser, polling, plus
+   the overview and detail screens.
+4. **Activity log, `ABANDONED` toggle and the documentation.**
+
+Deliberately not built, and not to be added without asking: review handoff between
+agents (v1.1), starting and stopping programs (v2), deleting a program, live log
+streaming, authentication, notifications, and anything that reads from disk.
+
+## For the agents
+
+`AGENT-API.md` is the usage guide, written to be pasted into an agent's context
+without reading the OpenAPI specification. It ends with a snippet to drop into a
+tracked project's own `AGENTS.md` so that project's agent reports here.
+
+`AGENTS.md` in this directory is for agents working *on* the dashboard itself.
 
 ## A note on the test database
 
@@ -158,6 +181,20 @@ export TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal
 ```
 
 `./up.sh` sets this for you when it detects it is running in a container.
+
+## The screens
+
+Two, as specified. `/` lists every program with its status, progress and open
+questions, flags anything with a blocking question, and refreshes every 15 seconds
+with a manual refresh alongside. `/programs/:slug` shows the open questions first —
+they are the only thing on the page waiting on you — then the milestone checklist,
+then answered questions, then the initial prompt rendered as read-only markdown.
+
+The detail page deliberately has no timer. It reloads on navigation and after every
+write, so nothing pulls the ground out from under a half-written answer.
+
+Markdown is sanitised with DOMPurify before it reaches the page. A prompt is written
+by an agent and stored verbatim, so it is untrusted input being rendered as HTML.
 
 ## A note on nulls
 

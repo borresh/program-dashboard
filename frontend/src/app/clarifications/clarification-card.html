@@ -1,0 +1,47 @@
+<mat-card
+  appearance="outlined"
+  class="pd-clarification"
+  [class.pd-blocking]="clarification().blocking && clarification().status === 'OPEN'"
+  [class.pd-answered]="clarification().status === 'ANSWERED'"
+>
+  <mat-card-content>
+    <div class="mb-2 flex flex-wrap items-center gap-2 text-xs opacity-70">
+      @if (clarification().blocking && clarification().status === 'OPEN') {
+        <span class="pd-blocking-tag" data-testid="blocking-tag">
+          <mat-icon inline>report_problem</mat-icon>
+          Blocking
+        </span>
+      }
+      <span>{{ clarification().askedBy.name }}</span>
+      <span>&middot;</span>
+      <span>{{ clarification().askedAt | date: 'short' }}</span>
+    </div>
+
+    <p class="mt-0 mb-2 text-base font-medium">{{ clarification().question }}</p>
+
+    @if (clarification().context; as context) {
+      <div class="pd-context mb-4 text-sm">
+        <pd-markdown [source]="context" />
+      </div>
+    }
+
+    @if (clarification().status === 'OPEN') {
+      <pd-answer-form [clarification]="clarification()" (answered)="answered.emit($event)" />
+    } @else {
+      <div class="pd-answer">
+        @if (clarification().chosenOption; as chosen) {
+          <p class="mt-0 mb-1 text-sm">
+            <span class="opacity-70">Chose:</span> <strong>{{ chosen.label }}</strong>
+          </p>
+        }
+        @if (clarification().answerText; as answerText) {
+          <p class="my-1">{{ answerText }}</p>
+        }
+        <p class="mt-2 mb-0 text-xs opacity-70">
+          Answered by {{ clarification().answeredBy?.name }} &middot;
+          {{ clarification().answeredAt | date: 'short' }}
+        </p>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

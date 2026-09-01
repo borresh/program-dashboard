@@ -1,0 +1,27 @@
+# Test-only overrides for the browser checks.
+#
+# The e2e browser runs inside the compose network, so it loads the dashboard from
+# http://frontend:4200. The bundle and the backend both have to agree with that origin,
+# which is why the API base URL and the allowed CORS origin change here. The real CORS
+# configuration is still exercised — only the origin differs.
+
+services:
+  backend:
+    environment:
+      PROGRAM_DASHBOARD_CORS_ALLOWED_ORIGINS: http://frontend:4200
+
+  frontend:
+    environment:
+      PROGRAM_DASHBOARD_API_BASE_URL: http://backend:8080
+
+  e2e:
+    build:
+      context: ./e2e
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    environment:
+      PD_UI_URL: http://frontend:4200
+      PD_API_URL: http://backend:8080

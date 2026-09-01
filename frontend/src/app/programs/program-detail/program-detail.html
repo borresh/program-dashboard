@@ -1,0 +1,129 @@
+<a matButton routerLink="/" class="mb-4">
+  <mat-icon>arrow_back</mat-icon>
+  All programs
+</a>
+
+@if (isLoading$() && !program$()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (errorMessage$(); as message) {
+  <mat-card appearance="outlined" class="pd-error">
+    <mat-card-content class="flex items-start gap-3">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <span>{{ message }}</span>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (program$(); as program) {
+  <header class="mb-6 flex flex-wrap items-baseline justify-between gap-4">
+    <div>
+      <h1 class="m-0 text-2xl font-medium">{{ program.name }}</h1>
+      <p class="mt-1 mb-0 text-sm opacity-60">
+        {{ program.slug }} &middot; {{ program.status }} &middot; created by
+        {{ program.createdBy.name }} &middot; updated {{ program.updatedAt | date: 'short' }}
+      </p>
+    </div>
+    <button matButton="outlined" type="button" [disabled]="isLoading$()" (click)="reload()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </header>
+
+  @if (program.description; as description) {
+    <p class="mt-0 mb-6">{{ description }}</p>
+  }
+
+  <!-- R22: open questions first. They are the only thing on this page that is waiting on me. -->
+  <section class="mb-8">
+    <h2 class="mt-0 mb-3 text-lg font-medium">
+      Open questions
+      @if (openClarifications$().length > 0) {
+        <span class="pd-count">{{ openClarifications$().length }}</span>
+      }
+    </h2>
+
+    @if (openClarifications$().length === 0) {
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <p class="m-0 opacity-70">Nothing is waiting on you.</p>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="flex flex-col gap-3">
+        @for (clarification of openClarifications$(); track clarification.id) {
+          <pd-clarification-card [clarification]="clarification" (answered)="reload()" />
+        }
+      </div>
+    }
+  </section>
+
+  <section class="mb-8">
+    <h2 class="mt-0 mb-3 text-lg font-medium">Milestones</h2>
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        @if (program.totalMilestones === 0) {
+          <!-- R12: absent progress, never 0%. -->
+          <p class="m-0 opacity-70">
+            No milestones recorded yet, so there is no progress to report.
+          </p>
+        } @else {
+          <div class="mb-4 flex items-center gap-3">
+            <mat-progress-bar mode="determinate" [value]="(program.progress ?? 0) * 100" />
+            <span class="text-sm whitespace-nowrap opacity-70">
+              {{ program.progress | percent }} ({{ program.completedMilestones }}/{{
+                program.totalMilestones
+              }})
+            </span>
+          </div>
+          <ul class="m-0 list-none p-0">
+            @for (milestone of program.milestones; track milestone.id) {
+              <li class="pd-milestone" [class.pd-complete]="milestone.complete">
+                <mat-icon inline>{{
+                  milestone.complete ? 'check_box' : 'check_box_outline_blank'
+                }}</mat-icon>
+                <div>
+                  <span>{{ milestone.title }}</span>
+                  @if (milestone.description; as description) {
+                    <div class="text-sm opacity-70">{{ description }}</div>
+                  }
+                  @if (milestone.complete && milestone.completedBy; as completedBy) {
+                    <div class="text-xs opacity-60">
+                      {{ completedBy.name }} &middot; {{ milestone.completedAt | date: 'short' }}
+                    </div>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  @if (answeredClarifications$().length > 0) {
+    <section class="mb-8">
+      <h2 class="mt-0 mb-3 text-lg font-medium">Answered questions</h2>
+      <div class="flex flex-col gap-3">
+        @for (clarification of answeredClarifications$(); track clarification.id) {
+          <pd-clarification-card [clarification]="clarification" />
+        }
+      </div>
+    </section>
+  }
+
+  <section class="mb-8">
+    <h2 class="mt-0 mb-3 text-lg font-medium">Activity</h2>
+    <pd-activity-timeline [programSlug]="program.slug" [reloadToken]="reloadToken$()" />
+  </section>
+
+  <section>
+    <h2 class="mt-0 mb-3 text-lg font-medium">Initial prompt</h2>
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <pd-markdown [source]="program.initialPrompt" />
+      </mat-card-content>
+    </mat-card>
+  </section>
+}

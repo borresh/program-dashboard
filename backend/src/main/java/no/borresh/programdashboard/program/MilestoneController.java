@@ -1,8 +1,10 @@
 package no.borresh.programdashboard.program;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Tag(name = "milestones", description = "Editing, completing and deleting individual milestones.")
-@RequestMapping("/api/milestones")
+@RequestMapping(path = "/api/milestones", produces = MediaType.APPLICATION_JSON_VALUE)
 class MilestoneController {
 
     private final MilestoneService milestoneService;
@@ -24,6 +26,7 @@ class MilestoneController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(operationId = "updateMilestone")
     MilestoneResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateMilestoneRequest request) {
         return milestoneService.update(id, request);
     }
@@ -34,6 +37,7 @@ class MilestoneController {
      * and generates awkwardly in OpenAPI clients; a visible query parameter is neither.
      */
     @DeleteMapping("/{id}")
+    @Operation(operationId = "deleteMilestone")
     ResponseEntity<Void> delete(@PathVariable UUID id, @RequestParam UUID actorAgentId) {
         milestoneService.delete(id, actorAgentId);
         return ResponseEntity.noContent().build();

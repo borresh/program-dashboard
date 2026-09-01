@@ -1,0 +1,29 @@
+.pd-clarification.pd-blocking {
+  border-color: var(--mat-sys-error);
+  border-left-width: 4px;
+}
+
+.pd-clarification.pd-answered {
+  opacity: 0.85;
+}
+
+.pd-blocking-tag {
+  align-items: center;
+  color: var(--mat-sys-error);
+  display: inline-flex;
+  font-weight: 500;
+  gap: 0.25rem;
+  opacity: 1;
+}
+
+.pd-context {
+  border-left: 3px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-surface-variant);
+  padding-left: 0.75rem;
+}
+
+.pd-answer {
+  background: var(--mat-sys-surface-container-high);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}

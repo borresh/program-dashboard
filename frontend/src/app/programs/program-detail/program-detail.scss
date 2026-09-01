@@ -1,0 +1,25 @@
+.pd-count {
+  background: var(--mat-sys-error);
+  border-radius: 999px;
+  color: var(--mat-sys-on-error);
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  vertical-align: middle;
+}
+
+.pd-milestone {
+  align-items: start;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+}
+
+.pd-milestone.pd-complete > div > span:first-child {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.pd-error {
+  border-color: var(--mat-sys-error);
+}

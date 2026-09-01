@@ -16,15 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class MilestoneService {
 
     private final MilestoneRepository milestones;
-    private final ProgramService programService;
+    private final ProgramLookup programLookup;
     private final AgentService agentService;
     private final ActivityService activityService;
     private final Clock clock;
 
-    MilestoneService(MilestoneRepository milestones, ProgramService programService, AgentService agentService,
+    MilestoneService(MilestoneRepository milestones, ProgramLookup programLookup, AgentService agentService,
             ActivityService activityService, Clock clock) {
         this.milestones = milestones;
-        this.programService = programService;
+        this.programLookup = programLookup;
         this.agentService = agentService;
         this.activityService = activityService;
         this.clock = clock;
@@ -34,7 +34,7 @@ public class MilestoneService {
     @Transactional
     public MilestoneResponse add(String programIdOrSlug, AddMilestoneRequest request) {
         Agent actor = agentService.requireActor(request.actorAgentId());
-        Program program = programService.require(programIdOrSlug);
+        Program program = programLookup.require(programIdOrSlug);
 
         Milestone milestone = milestones.save(new Milestone(UUID.randomUUID(), program, request.title(),
                 request.description(), request.position()));
@@ -94,7 +94,7 @@ public class MilestoneService {
 
     @Transactional(readOnly = true)
     public List<MilestoneResponse> findForProgram(String programIdOrSlug) {
-        Program program = programService.require(programIdOrSlug);
+        Program program = programLookup.require(programIdOrSlug);
         return milestones.findByProgramIdOrderBySortOrderAscTitleAsc(program.getId()).stream()
                 .map(MilestoneResponse::from)
                 .toList();

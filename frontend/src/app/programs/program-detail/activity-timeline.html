@@ -1,0 +1,37 @@
+@if (errorMessage$(); as message) {
+  <mat-card appearance="outlined">
+    <mat-card-content class="flex items-start gap-3">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <span>{{ message }}</span>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      @if (entries$().length === 0) {
+        <p class="m-0 opacity-70">Nothing has happened yet.</p>
+      } @else {
+        <ol class="m-0 list-none p-0" data-testid="activity-timeline">
+          @for (entry of entries$(); track entry.id) {
+            <li class="pd-entry">
+              <mat-icon class="pd-entry-icon" inline>{{ iconFor(entry.type) }}</mat-icon>
+              <div>
+                <span>{{ entry.summary }}</span>
+                <div class="text-xs opacity-60">
+                  {{ entry.actor?.name ?? 'unknown' }} &middot;
+                  {{ entry.occurredAt | date: 'short' }}
+                </div>
+              </div>
+            </li>
+          }
+        </ol>
+
+        @if (entries$().length < totalElements$()) {
+          <button matButton type="button" class="mt-3" (click)="showMore()">
+            Show more ({{ totalElements$() - entries$().length }} older)
+          </button>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}

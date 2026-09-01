@@ -66,6 +66,13 @@ services:
       TZ: UTC
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-4200}:4200"
+    healthcheck:
+      # 127.0.0.1, not localhost: that resolves to ::1 first inside the container and
+      # nginx is listening on IPv4 only.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:4200/"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
     restart: unless-stopped
 
 volumes:

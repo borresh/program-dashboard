@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -14,8 +13,8 @@ import no.borresh.programdashboard.activity.ActivityService;
 import no.borresh.programdashboard.activity.ActivityType;
 import no.borresh.programdashboard.agent.Agent;
 import no.borresh.programdashboard.agent.AgentService;
+import no.borresh.programdashboard.clarification.ClarificationService;
 import no.borresh.programdashboard.common.ConflictException;
-import no.borresh.programdashboard.common.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,14 +23,19 @@ public class ProgramService {
 
     private final ProgramRepository programs;
     private final MilestoneRepository milestones;
+    private final ProgramLookup programLookup;
+    private final ClarificationService clarificationService;
     private final AgentService agentService;
     private final ActivityService activityService;
     private final Clock clock;
 
-    ProgramService(ProgramRepository programs, MilestoneRepository milestones, AgentService agentService,
+    ProgramService(ProgramRepository programs, MilestoneRepository milestones, ProgramLookup programLookup,
+            ClarificationService clarificationService, AgentService agentService,
             ActivityService activityService, Clock clock) {
         this.programs = programs;
         this.milestones = milestones;
+        this.programLookup = programLookup;
+        this.clarificationService = clarificationService;
         this.agentService = agentService;
         this.activityService = activityService;
         this.clock = clock;
@@ -52,7 +56,7 @@ public class ProgramService {
         activityService.record(program, ActivityType.PROGRAM_CREATED, actor,
                 "Registered program '%s' with %d milestone(s)".formatted(program.getSlug(), created.size()));
 
-        return ProgramDetailResponse.of(program, created);
+        return detailOf(program, created);
     }
 
     /** R7. */
@@ -75,16 +79,15 @@ public class ProgramService {
     /** R8. */
     @Transactional(readOnly = true)
     public ProgramDetailResponse findOne(String idOrSlug) {
-        Program program = require(idOrSlug);
-        return ProgramDetailResponse.of(program, milestones.findByProgramIdOrderBySortOrderAscTitleAsc(
-                program.getId()));
+        Program program = programLookup.require(idOrSlug);
+        return detailOf(program);
     }
 
     /** R9. */
     @Transactional
     public ProgramDetailResponse update(String idOrSlug, UpdateProgramRequest request) {
         Agent actor = agentService.requireActor(request.actorAgentId());
-        Program program = require(idOrSlug);
+        Program program = programLookup.require(idOrSlug);
         ProgramStatus previousStatus = program.getStatus();
 
         if (request.name() != null) {
@@ -103,21 +106,16 @@ public class ProgramService {
 
         recordUpdate(program, actor, previousStatus, request);
 
-        return ProgramDetailResponse.of(program, milestones.findByProgramIdOrderBySortOrderAscTitleAsc(
-                program.getId()));
+        return detailOf(program);
     }
 
-    /**
-     * R8. Resolves by UUID or slug. Used by every nested route, so an unknown program is a
-     * 404 that names what was looked up regardless of which form the caller used.
-     */
-    @Transactional(readOnly = true)
-    public Program require(String idOrSlug) {
-        return asUuid(idOrSlug)
-                .flatMap(programs::findById)
-                .or(() -> programs.findBySlug(idOrSlug))
-                .orElseThrow(() -> new ResourceNotFoundException("Program not found",
-                        "No program exists with id or slug '%s'.".formatted(idOrSlug)));
+    private ProgramDetailResponse detailOf(Program program) {
+        return detailOf(program, milestones.findByProgramIdOrderBySortOrderAscTitleAsc(program.getId()));
+    }
+
+    private ProgramDetailResponse detailOf(Program program, List<Milestone> programMilestones) {
+        return ProgramDetailResponse.of(program, programMilestones,
+                clarificationService.findForProgram(program.getId()));
     }
 
     private void rejectDuplicateSlug(String slug) {
@@ -163,15 +161,5 @@ public class ProgramService {
             changed.add("initial prompt");
         }
         return changed.isEmpty() ? "nothing" : String.join(", ", changed);
-    }
-
-    private static Optional<UUID> asUuid(String candidate) {
-        try {
-            return Optional.of(UUID.fromString(candidate));
-        } catch (IllegalArgumentException notAUuid) {
-            // Expected: the same path variable accepts a slug, so a non-UUID is routine
-            // rather than exceptional. Fall through to the slug lookup.
-            return Optional.empty();
-        }
     }
 }

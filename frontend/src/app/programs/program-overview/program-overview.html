@@ -1,0 +1,131 @@
+<div class="mb-6 flex items-baseline justify-between gap-4">
+  <div>
+    <h1 class="m-0 text-2xl font-medium">Programs</h1>
+    @if (lastRefreshedAt$(); as refreshedAt) {
+      <p class="mt-1 mb-0 text-sm opacity-60">
+        Updated {{ refreshedAt | date: 'HH:mm:ss' }} &middot; refreshes every 15 seconds
+      </p>
+    }
+  </div>
+
+  <div class="flex items-center gap-4">
+    @if (abandonedCount$() > 0) {
+      <mat-slide-toggle
+        data-testid="show-abandoned"
+        [checked]="showAbandoned$()"
+        (change)="toggleAbandoned($event.checked)"
+      >
+        Show abandoned ({{ abandonedCount$() }})
+      </mat-slide-toggle>
+    }
+
+    <button
+      matButton="outlined"
+      type="button"
+      [disabled]="isLoading$()"
+      (click)="refresh()"
+      matTooltip="Reload now"
+    >
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+</div>
+
+@if (isLoading$() && !hasLoadedOnce$()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (errorMessage$(); as message) {
+  <mat-card appearance="outlined" class="pd-error mb-6">
+    <mat-card-content class="flex items-start gap-3">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <span>{{ message }}</span>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (hasLoadedOnce$() && programs$().length === 0 && !errorMessage$()) {
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <p class="m-0">
+        No programs yet. The dashboard reads nothing from disk — an agent registers a program by
+        posting its initial prompt to <code>POST /api/programs</code>.
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (programs$().length > 0) {
+  <mat-card appearance="outlined">
+    <table mat-table [dataSource]="programs$()" class="w-full">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Program</th>
+        <td mat-cell *matCellDef="let program">
+          <a class="font-medium" [routerLink]="['/programs', program.slug]">{{ program.name }}</a>
+          <div class="text-xs opacity-60">{{ program.slug }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let program">
+          <span class="pd-status" [attr.data-status]="program.status">{{ program.status }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="progress">
+        <th mat-header-cell *matHeaderCellDef>Progress</th>
+        <td mat-cell *matCellDef="let program">
+          <!-- R12: no milestones means unknown, which is not the same as none done. -->
+          @if (program.progress === undefined) {
+            <span class="opacity-50" matTooltip="No milestones recorded yet">&mdash;</span>
+          } @else {
+            <div class="flex items-center gap-2">
+              <mat-progress-bar class="w-24" mode="determinate" [value]="program.progress * 100" />
+              <span class="text-xs whitespace-nowrap opacity-70">
+                {{ program.progress | percent }} ({{ program.completedMilestones }}/{{
+                  program.totalMilestones
+                }})
+              </span>
+            </div>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="questions">
+        <th mat-header-cell *matHeaderCellDef>Open questions</th>
+        <td mat-cell *matCellDef="let program">
+          @if (program.blockingClarificationCount > 0) {
+            <span
+              class="pd-blocking"
+              matTooltip="An agent is blocked waiting for an answer"
+              data-testid="blocking-flag"
+            >
+              <mat-icon inline>report_problem</mat-icon>
+              {{ program.blockingClarificationCount }} blocking
+            </span>
+          } @else if (program.openClarificationCount > 0) {
+            <span class="opacity-80">{{ program.openClarificationCount }} open</span>
+          } @else {
+            <span class="opacity-40">&mdash;</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="updatedAt">
+        <th mat-header-cell *matHeaderCellDef>Updated</th>
+        <td mat-cell *matCellDef="let program" class="whitespace-nowrap">
+          {{ program.updatedAt | date: 'short' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let program; columns: columns"
+        [class.pd-row-blocked]="program.blockingClarificationCount > 0"
+      ></tr>
+    </table>
+  </mat-card>
+}

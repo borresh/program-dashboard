@@ -7,13 +7,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import no.borresh.programdashboard.agent.AgentResponse;
+import no.borresh.programdashboard.clarification.ClarificationResponse;
 
-/**
- * R8. The whole program, including its prompt and milestones.
- *
- * <p>Clarifications join this record in phase 3, when they exist. An always-empty field
- * now would be a promise the API cannot yet keep.
- */
+/** R8. The whole program: its prompt, its milestones and its clarifications. */
 public record ProgramDetailResponse(
 
         @Schema(requiredMode = REQUIRED)
@@ -53,9 +49,13 @@ public record ProgramDetailResponse(
         Double progress,
 
         @Schema(requiredMode = REQUIRED)
-        List<MilestoneResponse> milestones) {
+        List<MilestoneResponse> milestones,
 
-    public static ProgramDetailResponse of(Program program, List<Milestone> milestones) {
+        @Schema(requiredMode = REQUIRED, description = "Open questions first, blocking ones above those.")
+        List<ClarificationResponse> clarifications) {
+
+    public static ProgramDetailResponse of(Program program, List<Milestone> milestones,
+            List<ClarificationResponse> clarifications) {
         long completed = milestones.stream().filter(Milestone::isComplete).count();
 
         return new ProgramDetailResponse(
@@ -71,6 +71,7 @@ public record ProgramDetailResponse(
                 completed,
                 milestones.size(),
                 Progress.of(completed, milestones.size()),
-                milestones.stream().map(MilestoneResponse::from).toList());
+                milestones.stream().map(MilestoneResponse::from).toList(),
+                clarifications);
     }
 }

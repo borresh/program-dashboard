@@ -1,0 +1,56 @@
+<div class="flex flex-col gap-4">
+  @if (clarification().proposedOptions.length > 0) {
+    <div>
+      <p class="mt-0 mb-2 text-sm font-medium opacity-70">Proposed answers</p>
+      <mat-radio-group
+        class="flex flex-col gap-2"
+        [value]="chosenOptionId$()"
+        (change)="onChooseOption($event.value)"
+      >
+        @for (option of clarification().proposedOptions; track option.id) {
+          <mat-radio-button [value]="option.id" [attr.data-option-label]="option.label">
+            <span class="font-medium">{{ option.label }}</span>
+            <span class="block text-sm opacity-70">{{ option.rationale }}</span>
+          </mat-radio-button>
+        }
+      </mat-radio-group>
+      @if (chosenOptionId$() !== null) {
+        <button matButton type="button" class="mt-1" (click)="clearChosenOption()">
+          Clear selection
+        </button>
+      }
+    </div>
+  }
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Answer</mat-label>
+    <textarea
+      matInput
+      rows="3"
+      data-testid="answer-text"
+      [value]="answerText$()"
+      (input)="onAnswerTextChange($any($event.target).value)"
+      placeholder="Anything the options do not cover"
+    ></textarea>
+    <mat-hint>Either pick an option, write an answer, or both.</mat-hint>
+  </mat-form-field>
+
+  @if (errorMessage$(); as message) {
+    <p class="pd-answer-error m-0 flex items-start gap-2 text-sm">
+      <mat-icon inline color="warn">error_outline</mat-icon>
+      <span>{{ message }}</span>
+    </p>
+  }
+
+  <div>
+    <button
+      matButton="filled"
+      type="button"
+      data-testid="submit-answer"
+      [disabled]="!canSubmit$() || isSubmitting$()"
+      (click)="submit()"
+    >
+      {{ isSubmitting$() ? 'Answering…' : 'Answer' }}
+    </button>
+  </div>
+</div>

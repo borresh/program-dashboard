@@ -4,7 +4,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { provideApi } from './api';
 import { routes } from './app.routes';
@@ -15,7 +15,7 @@ export function appConfig(runtimeConfig: RuntimeConfig): ApplicationConfig {
     providers: [
       provideBrowserGlobalErrorListeners(),
       provideZonelessChangeDetection(),
-      provideRouter(routes),
+      provideRouter(routes, withComponentInputBinding()),
       provideHttpClient(withFetch()),
       // Generated from the backend's OpenAPI specification; never hand-written.
       provideApi(runtimeConfig.apiBaseUrl),

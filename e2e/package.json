@@ -1,0 +1,11 @@
+{
+  "name": "program-dashboard-e2e",
+  "private": true,
+  "description": "Browser checks for the Program Dashboard. Kept out of frontend/ so the Angular project carries no test dependencies.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0"
+  }
+}
