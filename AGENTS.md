@@ -3,6 +3,10 @@
 Instructions for agents working on **this project**. Composes with the workspace
 baseline; where the two disagree, this file wins.
 
+See `DECISIONS.md` for every place this project deliberately differs from the
+original prompt at `prompts/program-dashboard.md`, and why. Where the prompt and
+`DECISIONS.md` disagree, `DECISIONS.md` is what was actually built.
+
 ## What this is
 
 A browser dashboard and REST API for tracking programs built with AI agents. Both
