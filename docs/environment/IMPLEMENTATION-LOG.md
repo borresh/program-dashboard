@@ -1,10 +1,10 @@
 # Implementation Log
 
 ## Current state
-- **Last completed phase:** Phase 3 (completed)
+- **Last completed phase:** Phase 5 (completed)
 - **Last updated:** 2026-09-09
-- **Blocked on:** (nothing)
-- **Next phase:** Phase 4 (sbx network policy + credentials)
+- **Blocked on:** (nothing — SSH agent forwarding uses `sbx secret set github` + per-session `-e GITHUB_TOKEN` injection)
+- **Next phase:** Phase 6 (Agent start + autonomous work)
 
 ## Phase 1 — Prereq verification + repo seeding
 - **Status:** completed
@@ -84,3 +84,77 @@
   - **No JDK 25 on host**: `up.sh` couldn't find a JDK 25+ because it only searches `/usr/lib/jvm/*`, sdkman, etc. Set `JAVA_HOME=/home/borre/.jdks/openjdk-26.0.2.1` manually. Could update `up.sh` search paths later.
 - **Plan changes:**
   - (none)
+
+## Phase 4 — sbx network policy + credentials
+- **Status:** completed
+- **Started:** 2026-09-09
+- **Completed:** 2026-09-09
+- **What was done:**
+  - Initialized sbx global network policy with `balanced` preset
+  - Added network allow rules:
+    - `opencode.ai:443` (AI service) — new rule
+    - `repo.maven.apache.org:443` — already covered by `default-package-managers`
+    - `repo1.maven.org:443` — new rule
+    - `registry.npmjs.org:443` — already covered by `default-package-managers`
+    - `registry-1.docker.io:443` — new rule
+    - `auth.docker.io:443` — new rule
+    - `production.cloudflare.docker.com:443` — already covered by `default-code-and-containers`
+    - `github.com:443` — already covered by `default-code-and-containers`
+    - `ssh.github.com:443` — new rule
+    - `api.github.com:443` — new rule
+  - Verified all network access with `sbx policy check network` commands
+- **Verification results:**
+  - `sbx policy ls` → 199 network rules allowed ✓
+  - `sbx policy check network opencode.ai:443` → Allowed ✓
+  - `sbx policy check network registry.npmjs.org:443` → Allowed ✓
+  - `sbx policy check network github.com:443` → Allowed ✓
+  - `sbx policy check network registry-1.docker.io:443` → Allowed ✓
+- **Issues encountered:**
+  - (none)
+- **Plan changes:**
+  - Decided to leave `.env` as-is (agents create their own from `.env.example` inside sandbox) — matches credential isolation design
+
+## Phase 5 — Create + validate sandboxes
+- **Status:** completed
+- **Started:** 2026-09-09
+- **Completed:** 2026-09-09
+- **What was done:**
+  - Upgraded sbx v0.39.0 → v0.42.1 (MSI from GitHub release, verified via `sbx version`)
+  - Added network allow rule: `github.com:22` (id `2d2db5b2`)
+  - Enabled Windows ssh-agent service (Running/Automatic), loaded registered key
+  - Created both sandboxes: `pd-agent-a`, `pd-agent-b` (opencode, 4 CPUs, 8 GB RAM)
+  - Installed Maven 3.9.12 via apt in both VMs
+  - Copied shared opencode config (opencode.json + AGENTS.md + .opencode/) into both VMs
+  - P4 validation: up.sh ✓, mvn verify ✓ (4/4 tests), e2e ✓ (5/5 Playwright) — both VMs
+  - P5 isolation: git branch isolation ✓, no API key in .env ✓
+  - Set up `sbx secret set github` (stored GitHub PAT for future sandboxes)
+  - docker compose down in both VMs (clean state for agents)
+- **Verification results:**
+  - `sbx ls` → both sandboxes running ✓
+  - Private daemon: `Name: pd-agent-a` / `pd-agent-b` ✓
+  - JDK 25.0.4 at `/usr/bin/java` (matches up.sh globs) ✓
+  - Clone workspace: 49 GB volume at guest-mirrored UNC path ✓
+  - Git daemon serves clone (not RO source) at port 9418 ✓
+  - Task briefs readable from `/run/sandbox/source/.sbx/` ✓
+  - Peer remotes wired (sandbox-pd-agent-b inside pd-agent-a) ✓
+  - `.env` contains 0 `sk-` secrets ✓ (OPENCODE_API_KEY via sbx `-e` only)
+  - Both VMs: up.sh + mvn verify + e2e all pass ✓
+- **Issues encountered:**
+  - **SSH agent forwarding broken on Windows**: The per-sandbox forwarder
+    (Linux container at `gateway.docker.internal:3129`) resets connections.
+    Cannot reach `\\.\pipe\openssh-ssh-agent` named pipe. Workaround:
+    `sbx secret set github --command 'gh auth token'` + per-session
+    `-e GITHUB_TOKEN` injection. Secrets only inject at sandbox creation.
+  - **Clone path**: The writable clone lives at the guest-mirrored UNC path
+    (`//wsl.localhost/Ubuntu/home/borre/dev/projects/program-dashboard`),
+    not `/home/agent/workspace` (empty template dir). Updated docs.
+  - **v0.42.1 MSI upgrade**: winget had no upgrade available; downloaded
+    MSI from `https://github.com/docker/sbx-releases/releases/download/v0.42.1/DockerSandboxes.msi`
+  - **Windows git "dubious ownership"**: WSL paths triggered safe.directory
+    protection; fixed with `git config --global --add safe.directory`
+- **Plan changes:**
+  - Updated `docs/environment/sandbox-lifecycle.md`: corrected clone path,
+    added SSH limitation note, added secret injection docs, added known
+    limitations section
+  - GitHub push auth: use `sbx secret set github` + `-e GITHUB_TOKEN`
+    per-session injection (option A from plan)
