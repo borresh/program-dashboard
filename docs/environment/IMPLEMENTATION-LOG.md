@@ -1,10 +1,10 @@
 # Implementation Log
 
 ## Current state
-- **Last completed phase:** Phase 5 (completed)
+- **Last completed phase:** Phase 7 (Autonomous verification agents — git integration demo)
 - **Last updated:** 2026-09-09
-- **Blocked on:** (nothing — SSH agent forwarding uses `sbx secret set github` + per-session `-e GITHUB_TOKEN` injection)
-- **Next phase:** Phase 6 (Agent start + autonomous work)
+- **Blocked on:** (nothing — agent pushes work over HTTPS via credential helper; SSH agent forwarding remains broken/inapplicable)
+- **Next phase:** Review `agent/a` + `agent/b` reports, merge if wanted; then real per-agent feature tasks
 
 ## Phase 1 — Prereq verification + repo seeding
 - **Status:** completed
@@ -158,3 +158,65 @@
     limitations section
   - GitHub push auth: use `sbx secret set github` + `-e GITHUB_TOKEN`
     per-session injection (option A from plan)
+
+## Phase 7 — Autonomous verification agents (git integration demo)
+- **Status:** completed
+- **Started:** 2026-09-09
+- **Completed:** 2026-09-09
+- **What was done:**
+  - **Plan change:** user chose to SKIP Phase 6 (reset/disposability
+    validation on existing sandboxes) and start agents directly.
+  - **Task:** user chose "verification-only demo" — each agent runs the full
+    verification suite, writes a per-agent report, commits it on its lane
+    (`agent/<x>`), and pushes to GitHub from inside the sandbox.
+  - Prepared push auth in both VMs (SSH forwarding is broken; everything is HTTPS):
+    - Stored `gh auth token` (41 bytes) as `chmod 600 /home/agent/.github-token`
+    - Global credential helper: `username=x-access-token` + password read from
+      the token file (global `~/.gitconfig` persists across sessions)
+    - Set git identity `pd-agent-a` / `pd-agent-b` in each clone
+    - Tested push auth with a throwaway branch (`agent/__authtest__`), then deleted it
+  - Enabled headless autonomy: patched the shared opencode.json in both VMs
+    (`build` agent: `git*commit*`/`git*push*` `ask`→`allow`, plus
+    `external_directory` allow for the workspace paths), because `opencode run`
+    auto-rejects any tool call whose permission is not pre-approved.
+  - Ran both agents headlessly: `sbx exec <name> -- bash -s < launch script>`
+    with `opencode run` in the foreground (foreground keeps the exec session
+    alive; a `nohup` background process would be killed by the 30 s auto-stop).
+  - Both agents ran the suite green, wrote reports, committed, and pushed.
+- **Verification results:**
+  - `origin/agent/a` → `3ea6930` "verification: agent-a full suite green at fe8863f" ✓
+  - `origin/agent/b` → `0dc2146` "verification: agent-b full suite green at fe8863f" ✓
+  - `git ls-remote` on host shows `agent/a`, `agent/b`, `main` ✓
+  - Agent-a suite: up.sh ✓, mvn verify ✓ (44 unit + 4 IT), npm ci ✓, lint ✓,
+    build ✓, e2e ✓ (5/5), restore up.sh ✓ — all green in-sandbox
+  - Agent-b suite: same, all green (self-resolved the Node version issue; see below)
+- **Issues encountered:**
+  - **Headless permission auto-reject**: a bare `opencode run` cannot grant
+    permissions interactively, so anything not pre-approved is auto-rejected.
+    This first blocked `git commit` on agent-a. Fixed in the shared config
+    source (`~/dev/sbx_opencode_configuration/opencode.json`) and resynced to
+    both VMs so future sandboxes inherit the fixes at creation time.
+  - **origin re-provisioned to SSH every session**: repo-local
+    `git remote set-url origin https://…` did NOT persist across sandbox
+    sessions. Workaround baked into the launch script: `git remote set-url`
+    runs before every `opencode run`. Global `~/.gitconfig` (credential helper,
+    identity) DID persist. Note: `url.<base>.insteadOf` does not match the
+    scp-style `git@github.com:` URL (only the canonical ssh:// form), so the
+    rewrite approach was abandoned in favour of set-url.
+  - **Node.js too old for Angular 22**: VM default is `v22.22.1` but Angular CLI
+    needs `≥ v22.22.3`; `lint`/`build` fail with a clear message. Agent-b
+    self-resolved by fetching the `v22.22.3` tarball (`.tar.gz`; no xz in the
+    sandbox) to `/tmp/node-v22.22.3`, prepending to `PATH`. Documented so
+    future runs bootstrap it up-front.
+  - Agent-a's second run inherited a stale staged report from run one; the
+    commit message references `fe8863f` (the clone's `origin/main` baseline at
+    clone time). Cosmetic for the demo.
+- **Plan changes:**
+  - Phase 6 reset/disposability skipped per user decision (existing sandboxes
+    reused)
+  - Updated `~/dev/sbx_opencode_configuration/opencode.json` (shared source) for
+    headless-safe permissions
+  - Updated `docs/environment/sandbox-lifecycle.md` with the working headless
+    run pattern and push auth
+  - Updated `docs/environment/known-limitations.md` (sbx v0.42.1, Node floor,
+    origin re-provisioning, permission auto-reject)
